@@ -1,5 +1,4 @@
-from logos.context import Container, Service, Class
-from logos_server.routes import Router, Route
+from logos.context import Container, Service
 
 container = Container({
     'app.command.serve': Service(

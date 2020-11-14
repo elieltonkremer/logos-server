@@ -1,7 +1,7 @@
 from abc import ABC, abstractmethod
 from typing import List
 
-from logos.context import Class, context, Parameter
+from logos.context import Class, context, Parameter, Context, StackContainer
 from bottle import Bottle, request, response
 
 
@@ -25,10 +25,22 @@ class Route(Registrable):
     def register(self, app: Bottle):
         @app.route(path=self.path, method=self.methods)
         def wrapper(*args, **kwargs):
-            controller_class = self.controller.resolve(context)
-            controller = controller_class(**Parameter.resolve_value(self.parameters, context))
-            handler = getattr(controller, self.handler)
-            return handler(request, response, *args, **kwargs)
+            request_containers = []
+            request_context = Context.new_from(
+                context=context.get('context'),
+                runtime={
+                    "request": request,
+                    "response": response
+                },
+                container=StackContainer(request_containers)
+            )
+            with request_context:
+                if request_context.has('app.container.request'):
+                    request_containers.append(request_context.get('app.container.request'))
+                controller_class = self.controller.resolve(context)
+                controller = controller_class(**Parameter.resolve_value(self.parameters, context))
+                handler = getattr(controller, self.handler)
+                return handler(request, response, *args, **kwargs)
 
 
 class Router(Registrable):
