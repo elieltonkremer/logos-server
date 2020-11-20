@@ -31,31 +31,19 @@ class Route(Registrable):
 
     def register(self, app: Bottle):
         request_middleware: List[Type[Callable]] = [
-            context.get(item) for item in context.get('groups.request_middleware')
+            context.get(item) for item in context.get('groups.request_middleware').values()
         ]
 
         @app.route(path=self.path, method=self.methods)
         def wrapper(*args, **kwargs):
-            request_containers = []
-            request_context = Context.new_from(
-                context=context.get('context'),
-                runtime={
-                    "request": request,
-                    "response": response
-                },
-                container=StackContainer(request_containers)
-            )
-            with request_context:
-                if request_context.has('app.container.request'):
-                    request_containers.append(request_context.get('app.container.request'))
-                controller_class = self.controller.resolve(context)
-                controller = controller_class(**Parameter.resolve_value(self.parameters, context))
-                handler = getattr(controller, self.handler)
-                for middleware_class in self.middleware:
-                    handler = middleware_class(handler)
-                for middleware_class in request_middleware:
-                    handler = middleware_class(handler)
-                return handler(request, response, *args, **kwargs)
+            controller_class = self.controller.resolve(context)
+            controller = controller_class(**Parameter.resolve_value(self.parameters, context))
+            handler = getattr(controller, self.handler)
+            for middleware_class in reversed(self.middleware):
+                handler = middleware_class(handler)
+            for middleware_class in reversed(request_middleware):
+                handler = middleware_class(handler)
+            return handler(request, response, *args, **kwargs)
 
 
 class Router(Registrable):
