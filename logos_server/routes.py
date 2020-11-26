@@ -15,7 +15,7 @@ class Registrable(ABC):
 class Route(Registrable):
 
     def __init__(self,
-                 path: str,
+                 path: Union[list, str],
                  controller: Class,
                  methods: list = None,
                  parameters: dict = None,
