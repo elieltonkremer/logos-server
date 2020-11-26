@@ -2,7 +2,7 @@ from setuptools import setup
 
 setup(
     name='logos-server',
-    version='0.2',
+    version='0.3',
     packages=['logos_server'],
     url='',
     license='MIT',

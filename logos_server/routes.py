@@ -33,17 +33,18 @@ class Route(Registrable):
         request_middleware: List[Type[Callable]] = [
             context.get(item) for item in context.get('groups.request_middleware').values()
         ]
-
-        @app.route(path=self.path, method=self.methods)
-        def wrapper(*args, **kwargs):
-            controller_class = self.controller.resolve(context)
-            controller = controller_class(**Parameter.resolve_value(self.parameters, context))
-            handler = getattr(controller, self.handler)
-            for middleware_class in reversed(self.middleware):
-                handler = middleware_class(handler)
-            for middleware_class in reversed(request_middleware):
-                handler = middleware_class(handler)
-            return handler(request, response, *args, **kwargs)
+        paths = self.path if isinstance(self.path, list) else [self.path]
+        for path in paths:
+            @app.route(path=path, method=self.methods)
+            def wrapper(*args, **kwargs):
+                controller_class = self.controller.resolve(context)
+                controller = controller_class(**Parameter.resolve_value(self.parameters, context))
+                handler = getattr(controller, self.handler)
+                for middleware_class in reversed(self.middleware):
+                    handler = middleware_class(handler)
+                for middleware_class in reversed(request_middleware):
+                    handler = middleware_class(handler)
+                return handler(request, response, *args, **kwargs)
 
 
 class Router(Registrable):
