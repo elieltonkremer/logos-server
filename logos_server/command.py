@@ -13,7 +13,7 @@ class ServeCommand(AbstractCommand):
 
     def execute(self):
         arguments = self.arguments
-        app.run(
+        self.server.run(
             host=arguments.host,
             port=arguments.port,
             reloader=True
